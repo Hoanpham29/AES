@@ -74,7 +74,6 @@ namespace AES
                 return;
             }
 
-            // Adjust the key length based on the selected key size
             key = AdjustKeyLength(key, keySize);
 
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
@@ -117,12 +116,12 @@ namespace AES
 
             foreach (char c in hex)
             {
-                int decimalValue = Convert.ToInt32(c.ToString(), 16); // Chuyển ký tự hex sang số thập phân
-                string binary = Convert.ToString(decimalValue, 2).PadLeft(4, '0'); // Chuyển thập phân sang nhị phân (đủ 4 bit)
+                int decimalValue = Convert.ToInt32(c.ToString(), 16);
+                string binary = Convert.ToString(decimalValue, 2).PadLeft(4, '0');
                 binaryBuilder.Append(binary + " ");
             }
 
-            return binaryBuilder.ToString().Trim(); // Loại bỏ khoảng trắng cuối
+            return binaryBuilder.ToString().Trim();
         }
         private string BinaryToDecimal(string binary)
         {
@@ -130,11 +129,11 @@ namespace AES
 
             foreach (string bin in binary.Split(' '))
             {
-                int decimalValue = Convert.ToInt32(bin, 2); // Chuyển từng chuỗi nhị phân sang thập phân
+                int decimalValue = Convert.ToInt32(bin, 2);
                 decimalBuilder.Append(decimalValue.ToString() + " ");
             }
 
-            return decimalBuilder.ToString().Trim(); // Loại bỏ khoảng trắng cuối
+            return decimalBuilder.ToString().Trim();
         }
         private string DecimalToText(string decimals)
         {
@@ -142,8 +141,8 @@ namespace AES
 
             foreach (string dec in decimals.Split(' '))
             {
-                int decimalValue = int.Parse(dec); // Chuyển chuỗi thập phân sang số nguyên
-                textBuilder.Append((char)decimalValue); // Chuyển số nguyên thành ký tự ASCII
+                int decimalValue = int.Parse(dec);
+                textBuilder.Append((char)decimalValue);
             }
 
             return textBuilder.ToString();
@@ -155,12 +154,12 @@ namespace AES
             // Chia chuỗi decimal thành các phần tử, ngăn cách bởi khoảng trắng
             foreach (string decimalValue in decimals.Split(' '))
             {
-                int value = int.Parse(decimalValue); // Chuyển chuỗi decimal sang số nguyên
-                char asciiChar = (char)value; // Chuyển số nguyên sang ký tự ASCII
-                asciiBuilder.Append(asciiChar); // Ghép ký tự vào chuỗi kết quả
+                int value = int.Parse(decimalValue);
+                char asciiChar = (char)value;
+                asciiBuilder.Append(asciiChar);
             }
 
-            return asciiBuilder.ToString(); // Trả về chuỗi ASCII
+            return asciiBuilder.ToString();
         }
 
 
@@ -170,7 +169,7 @@ namespace AES
 
             foreach (char c in text)
             {
-                decimalBuilder.Append(((int)c).ToString() + " "); // Chuyển ký tự sang mã ASCII (decimal)
+                decimalBuilder.Append(((int)c).ToString() + " ");
             }
 
             return decimalBuilder.ToString().Trim(); // Loại bỏ khoảng trắng cuối
@@ -237,17 +236,14 @@ namespace AES
         }
         private byte[,] KeyExpansion(byte[] key, int keySize)
         {
-            // Determine the number of words (Nk) in the key, columns (Nb) in the state, and total rounds (Nr)
-            int nk = keySize / 32; // Number of 32-bit words in the key (4 for 128-bit, 6 for 192-bit, 8 for 256-bit)
-            int nb = 4;            // Number of columns in the state matrix (always 4)
-            int nr = nk + 6;       // Number of rounds (10, 12, 14)
-
-            // Expanded key size in bytes: (Nr + 1) * Nb * 4 bytes
+            int nk = keySize / 32;
+            int nb = 4;
+            int nr = nk + 6;
+            
             byte[,] expandedKeys = new byte[(nr + 1) * nb, 4];
 
-            uint[] roundKeys = new uint[(nr + 1) * nb]; // Temporary array to store expanded words
+            uint[] roundKeys = new uint[(nr + 1) * nb];
 
-            // Copy the original key into the first Nk words
             for (int i = 0; i < nk; i++)
             {
                 roundKeys[i] = BitConverter.ToUInt32(key, i * 4);
@@ -258,16 +254,16 @@ namespace AES
             {
                 uint temp = roundKeys[i - 1];
 
-                if (i % nk == 0) // Every Nk words, apply RotWord, SubWord, and Rcon
+                if (i % nk == 0)
                 {
                     temp = SubWord(RotWord(temp)) ^ Rcon[i / nk];
                 }
-                else if (nk > 6 && i % nk == 4) // Special case for AES-256: apply SubWord every 4th word
+                else if (nk > 6 && i % nk == 4) 
                 {
                     temp = SubWord(temp);
                 }
 
-                roundKeys[i] = roundKeys[i - nk] ^ temp; // XOR with the word Nk positions earlier
+                roundKeys[i] = roundKeys[i - nk] ^ temp;
             }
 
             // Convert to byte array for easy access during encryption
@@ -304,11 +300,8 @@ namespace AES
                 rounds = 14; // AES-256: 14 rounds
             }
 
-            // Bước 1: AddRoundKey (Khởi tạo)
-            AddRoundKey(state, roundKeys, 0, keySize); // Use round 0 key for initial AddRoundKey
+            AddRoundKey(state, roundKeys, 0, keySize);
             txtOutput.AppendText($"AddRoundKey (bước khởi tạo): {ByteArrayToHex(state)}\n");
-
-            // Vòng lặp chính của AES: 9 rounds for AES-128, 11 rounds for AES-192, 13 rounds for AES-256
             for (int round = 1; round < rounds; round++)
             {
                 txtOutput.AppendText($"\n--- Vòng {round} ---\n");
@@ -362,15 +355,14 @@ namespace AES
         private string BinaryToHex(string binaryString)
         {
             StringBuilder hex = new StringBuilder();
-            string[] binaryGroups = binaryString.Split(' '); // Tách theo từng nhóm 8 bit (1 byte)
+            string[] binaryGroups = binaryString.Split(' ');
 
             foreach (string binary in binaryGroups)
             {
                 if (!string.IsNullOrEmpty(binary))
                 {
-                    // Chuyển từng chuỗi nhị phân sang số nguyên, sau đó chuyển thành thập lục phân
                     int decimalValue = Convert.ToInt32(binary, 2);
-                    hex.Append(decimalValue.ToString("X2")); // Thêm định dạng "X2" để đảm bảo 2 chữ số
+                    hex.Append(decimalValue.ToString("X2"));
                 }
             }
 
@@ -380,17 +372,17 @@ namespace AES
         // Cập nhật hàm ByteArrayToHex để sử dụng chuỗi nhị phân
         private string ByteArrayToHex(byte[] byteArray)
         {
-            string binaryString = ByteArrayToBinary(byteArray) + " "; // Chuyển byte thành chuỗi nhị phân
-            return BinaryToHex(binaryString); // Chuyển chuỗi nhị phân thành chuỗi thập lục phân
+            string binaryString = ByteArrayToBinary(byteArray) + " ";
+            return BinaryToHex(binaryString);
         }
 
-        private static readonly byte[] Rcon = new byte[15] { // Updated Rcon array to support up to AES-256
+        private static readonly byte[] Rcon = new byte[15] {
             0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D
         };
 
         private uint RotWord(uint word)
         {
-            return (word >> 8) | (word << 24); // Rotate left by 8 bits
+            return (word >> 8) | (word << 24);
         }
 
         private uint SubWord(uint word)
@@ -398,20 +390,20 @@ namespace AES
             uint result = 0;
             for (int i = 0; i < 4; i++)
             {
-                byte byteValue = (byte)((word >> (8 * i)) & 0xFF); // Extract byte by byte
-                result |= (uint)(SBox[byteValue >> 4, byteValue & 0x0F] << (8 * i)); // Apply S-box substitution
+                byte byteValue = (byte)((word >> (8 * i)) & 0xFF);
+                result |= (uint)(SBox[byteValue >> 4, byteValue & 0x0F] << (8 * i));
             }
             return result;
         }
 
         private void AddRoundKey(byte[] state, byte[,] roundKeys, int round, int keySize)
         {
-            int numColumns = 4; // Số cột của ma trận trạng thái (4x4)
-            int keyColumns = keySize / 32; // Số cột trong key schedule (4, 6, hoặc 8 tùy kích thước khóa)
+            int numColumns = 4;
+            int keyColumns = keySize / 32;
 
-            for (int i = 0; i < numColumns; i++) // Lặp qua 4 cột đầu của trạng thái
+            for (int i = 0; i < numColumns; i++)
             {
-                for (int j = 0; j < 4; j++) // Lặp qua các byte trong mỗi cột
+                for (int j = 0; j < 4; j++)
                 {
                     // Chỉ lấy dữ liệu từ 4 cột đầu của roundKeys
                     state[i * 4 + j] ^= roundKeys[round * numColumns + i, j];
@@ -451,7 +443,6 @@ namespace AES
             temp[14] = state[14];
             temp[15] = state[15];
 
-            // Dịch hàng (theo AES chuẩn)
             state[0] = temp[0];
             state[1] = temp[5];
             state[2] = temp[10];
@@ -497,7 +488,7 @@ namespace AES
 
         private static void MixColumns(byte[] state)
         {
-            for (int i = 0; i < 4; i++) // for each column
+            for (int i = 0; i < 4; i++)
             {
                 byte a = state[4 * i];
                 byte b = state[4 * i + 1];
@@ -517,7 +508,6 @@ namespace AES
         }
 
         // Giải mã
-
         // Bảng SBox ngược (Inverse SBox)
         byte[,] SBoxInv = new byte[16, 16] {
             {0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb},
@@ -591,7 +581,7 @@ namespace AES
             }
             else
             {
-                txtPlaintext.Text = plainText; // Nếu chuỗi đã ngắn hơn hoặc bằng chiều dài ban đầu, không cần cắt
+                txtPlaintext.Text = plainText;
             }
         }
 
@@ -641,7 +631,7 @@ namespace AES
             int nr = (keySize / 32) + 6;
 
             // Bước 1: AddRoundKey (Khởi tạo) với khóa vòng cuối
-            AddRoundKey(state, roundKeys, nr, keySize); // Sử dụng khóa vòng cuối cùng
+            AddRoundKey(state, roundKeys, nr, keySize);
             txtOutput.AppendText($"AddRoundKey (bước khởi tạo): {ByteArrayToHex(state)}\n");
 
             // Vòng lặp Nr - 1 vòng giải mã của AES (vòng Nr - 1 -> 1)
@@ -709,7 +699,6 @@ namespace AES
                 temp[i] = state[i];
             }
 
-            // Dịch hàng ngược (theo AES chuẩn)
             state[0] = temp[0];
             state[1] = temp[13];
             state[2] = temp[10];
